@@ -13,6 +13,7 @@ mod tests {
     use super::*;
     use test::Bencher;
     use std::path::Path;
+    use std::str;
     use persy::{Persy, PersyError, PersyId, Value, ValueMode};
 
     #[test]
@@ -64,6 +65,24 @@ mod tests {
                 assert_eq!(Some(rec.to_vec()), value);
             }
         }
+    }
+
+    #[test]
+    pub fn persy_examine(){
+        let persy : Persy = Persy::open("index.exp", persy::Config::new()).expect("open");
+
+        let items = persy
+            .scan("data").expect("scan error");
+            let mut cnt = 1;
+            for (_id, content) in items {
+                println!("{}.", cnt);
+                cnt += 1;
+                println!("_id: {}", _id);
+                println!("content: {:#?}", content);
+                let st = str::from_utf8(&content).unwrap();
+                println!("string : {}", st);
+            }
+            // println!("num items: {}", items.len());
     }
 
 }
