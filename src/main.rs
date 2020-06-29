@@ -30,13 +30,18 @@ mod tests {
         b.iter(|| add_two(2));
     }
 
-    // #[bench]
+    #[bench]
     fn persy_save(b: &mut Bencher) {
         let persy = persy_setup();
         b.iter(|| save_one_read_one(&persy));
     }
     #[bench]
     fn persy_load(b: &mut Bencher) {
+        /*
+        9913.
+        string : aaaa
+        test tests::persy_load    ... bench: 186,553,579 ns/iter (+/- 134,647,326)
+        */
         let persy = persy_setup();
         b.iter(|| persy_examine(&persy));
     }
@@ -106,17 +111,55 @@ mod tests {
 
     #[test]
     //https://gitlab.com/tglman/persy/-/blob/master/tests/record_operations.rs#L180
-    fn test_insert_100_same_tx() {
+    fn test_insert_100_separate_tx() {
         /*
-         use std::time::Instant;
-    let now = Instant::now();
+running 1 test
+Elapsed: 464.091311ms
+test tests::test_insert_100_separate_tx ... ok
 
-    {
-        my_function_to_measure();
+running 1 test
+Elapsed: 676.424309ms
+test tests::test_insert_100_separate_tx ... ok
+        */
+        let now = Instant::now();
+        create_and_drop("i100", |persy| {
+            let mut tx = persy.begin().unwrap();
+            tx.create_segment("test").unwrap();
+            let prepared = tx.prepare_commit().unwrap();
+            prepared.commit().unwrap();
+
+
+            let bytes = String::from("something").into_bytes();
+            for _ in [0; 100].iter() {
+                let mut tx = persy.begin().unwrap();
+                tx.insert_record("test", &bytes).unwrap();
+                let finalizer = tx.prepare_commit().unwrap();
+                finalizer.commit().unwrap();
+            }
+           
+    
+            let mut count = 0;
+            for _ in persy.scan("test").unwrap() {
+                count += 1;
+            }
+            assert_eq!(count, 100);
+        });
+
+        let elapsed = now.elapsed();
+        println!("Elapsed: {:#?}", elapsed);
     }
 
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2}", elapsed);
+    #[test]
+    //https://gitlab.com/tglman/persy/-/blob/master/tests/record_operations.rs#L180
+    fn test_insert_100_same_tx() {
+        /*
+        running 1 test
+Elapsed: 30.853613ms
+test tests::test_insert_100_same_tx ... ok
+
+running 1 test
+Elapsed: 19.206823ms
+test tests::test_insert_100_same_tx ... ok
         */
         let now = Instant::now();
         create_and_drop("i100", |persy| {
