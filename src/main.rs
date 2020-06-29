@@ -26,8 +26,18 @@ mod tests {
         b.iter(|| add_two(2));
     }
 
-    #[bench]
+    // #[bench]
     fn persy_save(b: &mut Bencher){
+        let persy = persy_setup();
+        b.iter(|| save_one_read_one(&persy));
+    }
+    #[bench]
+    fn persy_load(b: &mut Bencher){
+        let persy = persy_setup();
+        b.iter(|| persy_examine(&persy));
+    }
+
+    fn persy_setup() -> Persy{
         //https://gitlab.com/tglman/persy/-/blob/master/examples/indexes.rs
         let create_segment;
         if !Path::new("index.exp").exists() {
@@ -45,8 +55,8 @@ mod tests {
             let prepared = tx.prepare_commit().expect("prepare");
             prepared.commit().expect("commit");
         }
-        b.iter(|| save_one_read_one(&persy));
 
+        persy
     }
 
     fn save_one_read_one(persy: &Persy){
@@ -67,20 +77,22 @@ mod tests {
         }
     }
 
-    #[test]
-    pub fn persy_examine(){
-        let persy : Persy = Persy::open("index.exp", persy::Config::new()).expect("open");
+    // #[test]
+    pub fn persy_examine(persy: &Persy){
+        // let persy : Persy = Persy::open("index.exp", persy::Config::new()).expect("open");
 
         let items = persy
             .scan("data").expect("scan error");
-            let mut cnt = 1;
+            let mut cnt = 0;
             for (_id, content) in items {
-                println!("{}.", cnt);
                 cnt += 1;
-                println!("_id: {}", _id);
-                println!("content: {:#?}", content);
                 let st = str::from_utf8(&content).unwrap();
+                println!("{}.", cnt);
                 println!("string : {}", st);
+                if false {
+                    println!("_id: {}", _id);
+                    println!("content: {:#?}", content);
+                }
             }
             // println!("num items: {}", items.len());
     }
