@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 persy = "0.9"
 tempfile = "3.1.0"
+rusqlite = {version = "0.23.1", features = ["bundled"]}

@@ -2,33 +2,18 @@
 extern crate test;
 
 #[allow(soft_unstable)]
-// #![cfg_attr(test, feature(test))]
-
 mod helpers;
-
-pub fn add_two(a: i32) -> i32 {
-    a + 2
-}
+mod sqlite_benchmark;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::helpers::create_and_drop;
     use persy::{Persy, PersyError, PersyId, Value, ValueMode};
     use std::path::Path;
     use std::str;
-    use test::Bencher;
-    use crate::helpers::create_and_drop;
     use std::time::Instant;
-
-    #[test]
-    fn it_works() {
-        assert_eq!(4, add_two(2));
-    }
-
-    #[bench]
-    fn bench_add_two(b: &mut Bencher) {
-        b.iter(|| add_two(2));
-    }
+    use test::Bencher;
 
     #[bench]
     fn persy_save(b: &mut Bencher) {
@@ -113,21 +98,20 @@ mod tests {
     //https://gitlab.com/tglman/persy/-/blob/master/tests/record_operations.rs#L180
     fn test_insert_100_separate_tx() {
         /*
-running 1 test
-Elapsed: 464.091311ms
-test tests::test_insert_100_separate_tx ... ok
+        running 1 test
+        Elapsed: 464.091311ms
+        test tests::test_insert_100_separate_tx ... ok
 
-running 1 test
-Elapsed: 676.424309ms
-test tests::test_insert_100_separate_tx ... ok
-        */
+        running 1 test
+        Elapsed: 676.424309ms
+        test tests::test_insert_100_separate_tx ... ok
+                */
         let now = Instant::now();
         create_and_drop("i100", |persy| {
             let mut tx = persy.begin().unwrap();
             tx.create_segment("test").unwrap();
             let prepared = tx.prepare_commit().unwrap();
             prepared.commit().unwrap();
-
 
             let bytes = String::from("something").into_bytes();
             for _ in [0; 100].iter() {
@@ -136,8 +120,7 @@ test tests::test_insert_100_separate_tx ... ok
                 let finalizer = tx.prepare_commit().unwrap();
                 finalizer.commit().unwrap();
             }
-           
-    
+
             let mut count = 0;
             for _ in persy.scan("test").unwrap() {
                 count += 1;
@@ -153,14 +136,14 @@ test tests::test_insert_100_separate_tx ... ok
     //https://gitlab.com/tglman/persy/-/blob/master/tests/record_operations.rs#L180
     fn test_insert_100_same_tx() {
         /*
-        running 1 test
-Elapsed: 30.853613ms
-test tests::test_insert_100_same_tx ... ok
+                running 1 test
+        Elapsed: 30.853613ms
+        test tests::test_insert_100_same_tx ... ok
 
-running 1 test
-Elapsed: 19.206823ms
-test tests::test_insert_100_same_tx ... ok
-        */
+        running 1 test
+        Elapsed: 19.206823ms
+        test tests::test_insert_100_same_tx ... ok
+                */
         let now = Instant::now();
         create_and_drop("i100", |persy| {
             let mut tx = persy.begin().unwrap();
@@ -171,7 +154,7 @@ test tests::test_insert_100_same_tx ... ok
             }
             let finalizer = tx.prepare_commit().unwrap();
             finalizer.commit().unwrap();
-    
+
             let mut count = 0;
             for _ in persy.scan("test").unwrap() {
                 count += 1;
@@ -182,8 +165,6 @@ test tests::test_insert_100_same_tx ... ok
         let elapsed = now.elapsed();
         println!("Elapsed: {:#?}", elapsed);
     }
-    
-    
 }
 
 fn main() {
